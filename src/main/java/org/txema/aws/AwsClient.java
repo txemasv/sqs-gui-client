@@ -38,6 +38,7 @@ public class AwsClient implements SqsClient {
             String awsQueueUrl = createQueue(fromUrl(queueUrl));
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(awsQueueUrl);
             List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
+            if (messages.isEmpty()) Log.empty();
             for (Message m : messages) {
                 messagesOutput.add(new MessageOutput(m.getReceiptHandle(), m.getBody()));
                 Log.receiveMessage(m.getReceiptHandle(), m.getBody());

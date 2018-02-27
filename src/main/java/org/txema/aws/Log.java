@@ -60,6 +60,12 @@ public class Log {
         print(info);
     }
 
+    public static void empty() {
+        info = "\n" + "{empty}" +
+                " (" + dateFormatter.format(new Date()) + ")" + "\n";
+        print(info);
+    }
+
     public static String getInfo() {
         String output = info;
         info = "";
