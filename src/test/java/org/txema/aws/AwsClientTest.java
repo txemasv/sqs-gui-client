@@ -8,7 +8,7 @@ import static junit.framework.Assert.assertTrue;
 /**
  * Unit test for simple App.
  */
-public class AwsImplementationTest {
+public class AwsClientTest {
 
     /**
      * Rigorous Test :-)
