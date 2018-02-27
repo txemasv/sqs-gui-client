@@ -1,6 +1,5 @@
 package org.txema.aws;
 
-import com.amazonaws.AmazonServiceException;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,14 +15,17 @@ import javafx.stage.Stage;
 public class MainGUI extends Application {
 
     private SqsClient queueService = ApplicationContext.getInstance().getSqsClient();
-    private TextField queueCreate = new TextField();
-    private TextField queuePush = new TextField();
-    private TextField queuePull = new TextField();
+    private Tab tabSend = new Tab();
+    private Tab tabReceive = new Tab();
+    private Tab tabQueues = new Tab();
+    private TextField createQueueTxt = new TextField();
+    private TextField sendMessageTxt = new TextField();
+    private TextField receiveMessageTxt = new TextField();
     private String queueUrl = "";
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Tabs");
+        primaryStage.setTitle("SQS Client");
         Group root = new Group();
         Scene scene = new Scene(root, 600, 480, Color.WHITE);
 
@@ -32,9 +34,9 @@ public class MainGUI extends Application {
 
         // set tabs
         BorderPane borderPane = new BorderPane();
-        tabPane.getTabs().add(queueTab());
-        tabPane.getTabs().add(pushTab());
-        tabPane.getTabs().add(pullTab());
+        tabPane.getTabs().add(queuesSection());
+        tabPane.getTabs().add(sendMessageSection());
+        tabPane.getTabs().add(receiveMessageSection());
         borderPane.setCenter(tabPane);
 
         // bind to take available space
@@ -47,17 +49,16 @@ public class MainGUI extends Application {
         primaryStage.show();
     }
 
-    private Tab pushTab() {
-        //Push
-        Tab tab = new Tab();
-        tab.setText("Send");
+    private Tab sendMessageSection() {
+        tabSend.setText("Send");
+        tabSend.setDisable(true);
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
         textArea.setPrefColumnCount(5);
 
         //Input
-        queuePush.setDisable(true);
+        sendMessageTxt.setDisable(true);
         Label queueLbl = new Label("Queue/Url");
         TextField delayTxt = new TextField("0");
         Label delayLbl = new Label("Delay");
@@ -71,7 +72,7 @@ public class MainGUI extends Application {
         grid.setPadding(new Insets(25, 25, 25, 25));
 
         grid.add(queueLbl, 0, 0);
-        grid.add(queuePush, 1, 0);
+        grid.add(sendMessageTxt, 1, 0);
         grid.add(delayLbl, 0, 1);
         grid.add(delayTxt, 1, 1);
         grid.add(messageLbl, 0, 2);
@@ -87,7 +88,7 @@ public class MainGUI extends Application {
             Thread t = new Thread("producer") {
                 public void run() {
                     queueService.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
-                    textArea.setText(Log.getInfo());
+                    textArea.appendText(Log.getInfo());
                 }
             };
             t.run();
@@ -99,21 +100,20 @@ public class MainGUI extends Application {
         vbox.getChildren().add(textArea);
 
         vbox.setAlignment(Pos.CENTER);
-        tab.setContent(vbox);
+        tabSend.setContent(vbox);
 
-        return tab;
+        return tabSend;
     }
 
-    private Tab pullTab() {
-        //Push
-        Tab tab = new Tab();
-        tab.setText("Receive");
+    private Tab receiveMessageSection() {
+        tabReceive.setText("Receive");
+        tabReceive.setDisable(true);
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
 
         //Input
-        queuePull.setDisable(true);
+        receiveMessageTxt.setDisable(true);
         Label queueLbl = new Label("Queue/Url");
 
         GridPane grid = new GridPane();
@@ -123,16 +123,15 @@ public class MainGUI extends Application {
         grid.setPadding(new Insets(25, 25, 25, 25));
 
         grid.add(queueLbl, 0, 0);
-        grid.add(queuePull, 1, 0);
+        grid.add(receiveMessageTxt, 1, 0);
 
         //Button
         Button buttonPull = new Button("Pull");
         buttonPull.setOnAction(e -> {
-            System.out.println("Pull message");
             Thread t = new Thread("consume") {
                 public void run() {
                     queueService.receiveMessage(queueUrl);
-                    textArea.setText(Log.getInfo());
+                    textArea.appendText(Log.getInfo());
                 }
             };
             t.start();
@@ -143,13 +142,12 @@ public class MainGUI extends Application {
         vbox.getChildren().add(textArea);
 
         vbox.setAlignment(Pos.CENTER);
-        tab.setContent(vbox);
-        return tab;
+        tabReceive.setContent(vbox);
+        return tabReceive;
     }
 
-    private Tab queueTab() {
-        Tab tab = new Tab();
-        tab.setText("Queue");
+    private Tab queuesSection() {
+        tabQueues.setText("Queue");
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
@@ -164,7 +162,7 @@ public class MainGUI extends Application {
         grid.setPadding(new Insets(25, 25, 25, 25));
 
         grid.add(queueLbl, 0, 0);
-        grid.add(queueCreate, 1, 0);
+        grid.add(createQueueTxt, 1, 0);
 
         //Button
         Button buttonCreate = new Button("Get/Create");
@@ -172,8 +170,10 @@ public class MainGUI extends Application {
             System.out.println("Create queue");
             Thread t = new Thread("creator") {
                 public void run() {
-                    queueUrl = queueService.createQueue(queueCreate.getText());
-                    setQueue(queueUrl);
+                    String url = queueService.createQueue(createQueueTxt.getText());
+                    if(url != null) {
+                        setQueue(url);
+                    }
                     textArea.setText(Log.getInfo());
                 }
             };
@@ -185,13 +185,16 @@ public class MainGUI extends Application {
         vbox.getChildren().add(textArea);
 
         vbox.setAlignment(Pos.CENTER);
-        tab.setContent(vbox);
-        return tab;
+        tabQueues.setContent(vbox);
+        return tabQueues;
     }
 
-    private void setQueue(String queueUrl) {
-        queuePush.setText(queueUrl);
-        queuePull.setText(queueUrl);
+    private void setQueue(String url) {
+        queueUrl = url;
+        sendMessageTxt.setText(queueUrl);
+        receiveMessageTxt.setText(queueUrl);
+        tabReceive.setDisable(false);
+        tabSend.setDisable(false);
     }
 
     public static void main(String[] args) {

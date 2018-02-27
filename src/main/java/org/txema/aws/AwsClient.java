@@ -14,8 +14,8 @@ public class AwsClient implements SqsClient {
 
     private final AmazonSQS sqs;  //d.i.
 
-    public AwsClient(AmazonSQSClient sqsClient) {
-        this.sqs = sqsClient;
+    public AwsClient(AmazonSQSClient client) {
+        this.sqs = client;
     }
 
     @Override
