@@ -1,5 +1,7 @@
 package org.txema.aws;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
 /**
@@ -27,7 +29,8 @@ public class ApplicationContext {
         AWSCredentials awsCredentials = new BasicAWSCredentials("YOUR_ACCESS_KEY", "YOUR_SECRET_KEY");
         AmazonSQSClient client = new AmazonSQSClient(awsCredentials);
         */
-        AmazonSQSClient client = new AmazonSQSClient();
+        AWSCredentials awsCredentials = new BasicAWSCredentials("AKIAJKGMFBCL7OGC3CEA", "0NQKjTDTYbXJqfKeazp08LAAeescR2pzzkXYpsAx");
+        AmazonSQSClient client = new AmazonSQSClient(awsCredentials); //YOUR_CLIENT_TO_ACCESS_AWS
         sqsClient = new AwsClient(client);
     }
 
