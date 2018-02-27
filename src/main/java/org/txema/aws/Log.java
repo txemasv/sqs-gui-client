@@ -6,42 +6,68 @@ import java.util.Date;
 public class Log {
     private static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss");
 
+    private static String info = "";
+
     public static void sendMessage(String body) {
-        System.out.println("\n" + "--> Send message" +
+        info = "\n" + "--> Send message" +
                 " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "body" + ": " + body + "\n");
+                "\n" + "body" + ": " + body + "\n";
+        print(info);
     }
 
     public static void receiveMessage(String receiptHandle, String body) {
-        System.out.println("\n" + "(-) Receive message" +
+        info = "\n" + "(-) Receive message" +
                 " (" + dateFormatter.format(new Date()) + ")" +
                 "\n" + "receiptHandle" + ": " + receiptHandle +
-                "\n" + "body" + ": " + body + "\n");
+                "\n" + "body" + ": " + body + "\n";
+        print(info);
     }
 
     public static void deleteMessage(String receiptHandle) {
-        System.out.println("\n" + "(x) Delete Message" +
+        info = "\n" + "(x) Delete Message" +
                 " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "receiptHandle" + ": " + receiptHandle + "\n");
+                "\n" + "receiptHandle" + ": " + receiptHandle + "\n";
+        print(info);
     }
 
     public static void getQueue(String name) {
-        System.out.println("\nGet queue '" + name + "'.");
+        info = "\nGet queue '" + name + "'.";
+        print(info);
     }
 
     public static void queueLoaded(String url) {
-        System.out.println("QueueUrl = '" + url + "'.");
+        info = "\nQueueUrl = '" + url + "'.";
+        print(info);
     }
 
     public static void deleteQueue(String name) {
-        System.out.println("\nDelete queue '" + name + "'.");
+        info = "\nDelete queue '" + name + "'.";
+        print(info);
     }
 
     public static void purgeQueue(String name) {
-        System.out.println("\nPurge queue '" + name + "'.");
+        info = "\nPurge queue '" + name + "'.";
+        print(info);
     }
 
     public static void timeout(String name, Integer timeSeconds) {
-        System.out.println("\nTimeout " + timeSeconds + "s for queue '" + name + "'.");
+        info = "\nTimeout " + timeSeconds + "s for queue '" + name + "'.";
+        print(info);
     }
+
+    public static void exception(String message) {
+        info = "\n" + message;
+        print(info);
+    }
+
+    public static String getInfo() {
+        String output = info;
+        info = "";
+        return output;
+    }
+
+    private static void print(String info) {
+        System.out.println(info);
+    }
+
 }

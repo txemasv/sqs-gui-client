@@ -54,6 +54,7 @@ public class MainGUI extends Application {
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
+        textArea.setPrefColumnCount(5);
 
         //Input
         queuePush.setDisable(true);
@@ -85,11 +86,8 @@ public class MainGUI extends Application {
             }
             Thread t = new Thread("producer") {
                 public void run() {
-                    try {
-                        queueService.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
-                    } catch (AmazonServiceException ex) {
-                        textArea.setText(ex.getErrorMessage());
-                    }
+                    queueService.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
+                    textArea.setText(Log.getInfo());
                 }
             };
             t.run();
@@ -133,11 +131,8 @@ public class MainGUI extends Application {
             System.out.println("Pull message");
             Thread t = new Thread("consume") {
                 public void run() {
-                    try {
-                        queueService.receiveMessage(queueUrl);
-                    } catch (AmazonServiceException ex) {
-                        textArea.setText(ex.getErrorMessage());
-                    }
+                    queueService.receiveMessage(queueUrl);
+                    textArea.setText(Log.getInfo());
                 }
             };
             t.start();
@@ -177,12 +172,9 @@ public class MainGUI extends Application {
             System.out.println("Create queue");
             Thread t = new Thread("creator") {
                 public void run() {
-                    try {
-                        queueUrl = queueService.createQueue(queueCreate.getText());
-                        setQueue(queueUrl);
-                    } catch (AmazonServiceException ex) {
-                        textArea.setText(ex.getErrorMessage());
-                    }
+                    queueUrl = queueService.createQueue(queueCreate.getText());
+                    setQueue(queueUrl);
+                    textArea.setText(Log.getInfo());
                 }
             };
             t.start();
