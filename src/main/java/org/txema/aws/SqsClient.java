@@ -56,4 +56,9 @@ public interface SqsClient {
      * @param queueUrl: the queueUrl of the queue
      */
     void deleteQueue(String queueUrl);
+
+    /**
+     * Listing all queues in your account.
+     */
+    void listQueues();
 }

@@ -1,5 +1,6 @@
 package org.txema.aws;
 
+import com.amazonaws.AmazonServiceException;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -49,8 +50,10 @@ public class MainGUI extends Application {
     private Tab pushTab() {
         //Push
         Tab tab = new Tab();
-        tab.setText("Push");
+        tab.setText("Send");
         VBox vbox = new VBox();
+        TextArea textArea = new TextArea();
+        textArea.setEditable(false);
 
         //Input
         queuePush.setDisable(true);
@@ -82,7 +85,11 @@ public class MainGUI extends Application {
             }
             Thread t = new Thread("producer") {
                 public void run() {
-                    queueService.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
+                    try {
+                        queueService.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
+                    } catch (AmazonServiceException ex) {
+                        textArea.setText(ex.getErrorMessage());
+                    }
                 }
             };
             t.run();
@@ -91,6 +98,7 @@ public class MainGUI extends Application {
 
         vbox.getChildren().add(grid);
         vbox.getChildren().add(buttonPush);
+        vbox.getChildren().add(textArea);
 
         vbox.setAlignment(Pos.CENTER);
         tab.setContent(vbox);
@@ -101,8 +109,10 @@ public class MainGUI extends Application {
     private Tab pullTab() {
         //Push
         Tab tab = new Tab();
-        tab.setText("Pull");
+        tab.setText("Receive");
         VBox vbox = new VBox();
+        TextArea textArea = new TextArea();
+        textArea.setEditable(false);
 
         //Input
         queuePull.setDisable(true);
@@ -123,7 +133,11 @@ public class MainGUI extends Application {
             System.out.println("Pull message");
             Thread t = new Thread("consume") {
                 public void run() {
-                    queueService.receiveMessage(queueUrl);
+                    try {
+                        queueService.receiveMessage(queueUrl);
+                    } catch (AmazonServiceException ex) {
+                        textArea.setText(ex.getErrorMessage());
+                    }
                 }
             };
             t.start();
@@ -131,6 +145,7 @@ public class MainGUI extends Application {
 
         vbox.getChildren().add(grid);
         vbox.getChildren().add(buttonPull);
+        vbox.getChildren().add(textArea);
 
         vbox.setAlignment(Pos.CENTER);
         tab.setContent(vbox);
@@ -141,6 +156,8 @@ public class MainGUI extends Application {
         Tab tab = new Tab();
         tab.setText("Queue");
         VBox vbox = new VBox();
+        TextArea textArea = new TextArea();
+        textArea.setEditable(false);
 
         //Input
         Label queueLbl = new Label("Queue/Url");
@@ -160,16 +177,20 @@ public class MainGUI extends Application {
             System.out.println("Create queue");
             Thread t = new Thread("creator") {
                 public void run() {
-                    queueUrl = queueService.createQueue(queueCreate.getText());
-                    setQueue(queueUrl);
+                    try {
+                        queueUrl = queueService.createQueue(queueCreate.getText());
+                        setQueue(queueUrl);
+                    } catch (AmazonServiceException ex) {
+                        textArea.setText(ex.getErrorMessage());
+                    }
                 }
             };
             t.start();
         });
 
         vbox.getChildren().add(grid);
-
         vbox.getChildren().add(buttonCreate);
+        vbox.getChildren().add(textArea);
 
         vbox.setAlignment(Pos.CENTER);
         tab.setContent(vbox);
