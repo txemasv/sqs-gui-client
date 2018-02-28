@@ -8,55 +8,62 @@ public class Log {
 
     private static String info = "";
 
-    public static void sendMessage(String body) {
-        info = "\n" + "--> Send message" +
+    public static void sendMessage(String queue, String body) {
+        info = "\n" + "-> Sent at " +
                 " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "body" + ": " + body + "\n";
+                "\n" + "to" + ":              " + queue +
+                "\n" + "body" + ":         " + body + "\n";
         print(info);
     }
 
-    public static void receiveMessage(String receiptHandle, String body) {
-        info = "\n" + "(-) Receive message" +
+    public static void receiveMessage(String queue, String receiptHandle, String body) {
+        info =  "\n" + "<- Received at " +
                 " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "receiptHandle" + ": " + receiptHandle +
-                "\n" + "body" + ": " + body + "\n";
+                "\n" + "from" + ":                  " + queue +
+                "\n" + "receiptHandle" + ":   " + receiptHandle +
+                "\n" + "body" + ":                 " + body + "\n";
         print(info);
     }
 
     public static void deleteMessage(String receiptHandle) {
-        info = "\n" + "(x) Delete Message" +
+        info =  "\n" + "(x) Delete Message" +
                 " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "receiptHandle" + ": " + receiptHandle + "\n";
+                "\n" + "receiptHandle" + ":\n" + receiptHandle + "\n";
         print(info);
     }
 
     public static void getQueue(String name) {
-        info = "\nGet queue '" + name + "'.";
+        info =  "\nGet queue '" + name + "'." + "\n";
         print(info);
     }
 
     public static void queueLoaded(String url) {
-        info = "\nQueueUrl = '" + url + "'.";
+        info = "\nQueueUrl = '" + url + "'." + "\n";
+        print(info);
+    }
+
+    public static void queuesList(String urls) {
+        info =  "\nList of queues: \n\n" + urls + "\n";
         print(info);
     }
 
     public static void deleteQueue(String name) {
-        info = "\nDelete queue '" + name + "'.";
+        info = "\nQueue '" + name + "' deleted" + "\n";
         print(info);
     }
 
     public static void purgeQueue(String name) {
-        info = "\nPurge queue '" + name + "'.";
+        info = "\nQueue '" + name + "' purged" + "\n";
         print(info);
     }
 
     public static void timeout(String name, Integer timeSeconds) {
-        info = "\nTimeout " + timeSeconds + "s for queue '" + name + "'.";
+        info = "\nTimeout is now " + timeSeconds + "s for queue '" + name + "'." + "\n";
         print(info);
     }
 
     public static void exception(String message) {
-        info = "\n" + message;
+        info = "\n" + message + "\n";
         print(info);
     }
 

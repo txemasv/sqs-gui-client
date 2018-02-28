@@ -24,7 +24,7 @@ public class AwsClient implements SqsClient {
             String awsQueueUrl = createQueue(fromUrl(queueUrl));
             for (String message : messages) {
                 sqs.sendMessage(new SendMessageRequest(awsQueueUrl, message).withDelaySeconds(delaySeconds));
-                Log.sendMessage(message);
+                Log.sendMessage(awsQueueUrl, message);
             }
         } catch (AmazonServiceException ex) {
             Log.exception(ex.getErrorMessage());
@@ -41,7 +41,7 @@ public class AwsClient implements SqsClient {
             if (messages.isEmpty()) Log.empty();
             for (Message m : messages) {
                 messagesOutput.add(new MessageOutput(m.getReceiptHandle(), m.getBody()));
-                Log.receiveMessage(m.getReceiptHandle(), m.getBody());
+                Log.receiveMessage(awsQueueUrl, m.getReceiptHandle(), m.getBody());
             }
         } catch (AmazonServiceException ex) {
             Log.exception(ex.getErrorMessage());
@@ -78,7 +78,7 @@ public class AwsClient implements SqsClient {
         String awsQueueUrl = null;
         Log.getQueue(queueName);
         try {
-            CreateQueueRequest createQueueRequest = new CreateQueueRequest(queueName);
+            CreateQueueRequest createQueueRequest = new CreateQueueRequest(fromUrl(queueName));
             CreateQueueResult response = sqs.createQueue(createQueueRequest);
             awsQueueUrl = response.getQueueUrl();
             Log.queueLoaded(awsQueueUrl);
@@ -113,9 +113,11 @@ public class AwsClient implements SqsClient {
     @Override
     public void listQueues() {
         try {
+            String queuesList = "";
             for (final String queueUrl : sqs.listQueues().getQueueUrls()) {
-                Log.queueLoaded(queueUrl);
+                queuesList = queuesList.concat(queueUrl).concat("\n");
             }
+            Log.queuesList(queuesList);
         } catch (AmazonServiceException ex) {
             Log.exception(ex.getErrorMessage());
         }
