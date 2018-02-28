@@ -16,10 +16,12 @@ public class MainGUI extends Application {
     private SqsClient queueService = ApplicationContext.getInstance().getSqsClient();
     private Tab tabSend = new Tab();
     private Tab tabReceive = new Tab();
+    private Tab tabDelete = new Tab();
     private Tab tabQueues = new Tab();
     private TextField queuesTxt = new TextField();
-    private TextField sendMessageTxt = new TextField();
-    private TextField receiveMessageTxt = new TextField();
+    private TextField sendMessageUrl = new TextField();
+    private TextField receiveMessageUrl = new TextField();
+    private TextField deleteMessageUrl = new TextField();
     private String queueUrl = "";
     private static final double height = 600;
     private static final double width = 800;
@@ -41,6 +43,7 @@ public class MainGUI extends Application {
         tabPane.getTabs().add(queuesSection());
         tabPane.getTabs().add(sendMessageSection());
         tabPane.getTabs().add(receiveMessageSection());
+        tabPane.getTabs().add(deleteMessageSection());
         borderPane.setCenter(tabPane);
 
         // bind to take available space
@@ -61,8 +64,8 @@ public class MainGUI extends Application {
         textArea.setEditable(false);
         textArea.setScrollLeft(10);
 
-        sendMessageTxt.setDisable(true);
-        sendMessageTxt.setPrefWidth(prefWidth);
+        sendMessageUrl.setDisable(true);
+        sendMessageUrl.setPrefWidth(prefWidth);
         Label queueLbl = new Label("Queue/Url");
         TextField delayTxt = new TextField("0");
         Label delayLbl = new Label("Delay");
@@ -76,14 +79,14 @@ public class MainGUI extends Application {
 
         int row = 0;
         grid.add(queueLbl, 0, row);
-        grid.add(sendMessageTxt, 0, ++row);
+        grid.add(sendMessageUrl, 0, ++row);
         grid.add(delayLbl, 0, ++row);
         grid.add(delayTxt, 0, ++row);
         grid.add(messageLbl, 0, ++row);
         grid.add(messageTxt, 0, ++row);
 
-        Button buttonPush = new Button("Send");
-        buttonPush.setOnAction(e -> {
+        Button buttonSend = new Button("Send");
+        buttonSend.setOnAction(e -> {
             String newValue = delayTxt.getText();
             if (newValue == null || !newValue.matches("^[0-9]\\d*$")) {
                 delayTxt.setText("0");
@@ -98,7 +101,7 @@ public class MainGUI extends Application {
 
         });
 
-        grid.add(buttonPush, 0, ++row);
+        grid.add(buttonSend, 0, ++row);
         grid.add(textArea, 0, ++row);
 
         vbox.getChildren().add(grid);
@@ -115,8 +118,8 @@ public class MainGUI extends Application {
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
 
-        receiveMessageTxt.setDisable(true);
-        receiveMessageTxt.setPrefWidth(prefWidth);
+        receiveMessageUrl.setDisable(true);
+        receiveMessageUrl.setPrefWidth(prefWidth);
         Label queueLbl = new Label("Queue/Url");
 
         GridPane grid = new GridPane();
@@ -126,10 +129,10 @@ public class MainGUI extends Application {
 
         int row = 0;
         grid.add(queueLbl, 0, ++row);
-        grid.add(receiveMessageTxt, 0, ++row);
+        grid.add(receiveMessageUrl, 0, ++row);
 
-        Button buttonPull = new Button("Receive");
-        buttonPull.setOnAction(e -> {
+        Button buttonReceive = new Button("Receive");
+        buttonReceive.setOnAction(e -> {
             Thread t = new Thread("consume") {
                 public void run() {
                     queueService.receiveMessage(queueUrl);
@@ -139,7 +142,7 @@ public class MainGUI extends Application {
             t.start();
         });
 
-        grid.add(buttonPull, 0, ++row);
+        grid.add(buttonReceive, 0, ++row);
         grid.add(textArea, 0, ++row);
         vbox.getChildren().add(grid);
 
@@ -168,7 +171,7 @@ public class MainGUI extends Application {
 
         Button buttonCreate = new Button("Get/Create");
         buttonCreate.setOnAction(e -> {
-            textArea.setText("\n...");
+            textArea.setText("\nLoading ...");
             Thread t = new Thread("creator") {
                 public void run() {
                     String url = queueService.createQueue(queuesTxt.getText());
@@ -185,7 +188,7 @@ public class MainGUI extends Application {
         buttonPurge = new Button("Purge");
         buttonPurge.setDisable(true);
         buttonPurge.setOnAction(e -> {
-            textArea.setText("\n...");
+            textArea.setText("\nLoading ...");
             Thread t = new Thread("creator") {
                 public void run() {
                     queueService.purgeQueue(queueUrl);
@@ -198,7 +201,7 @@ public class MainGUI extends Application {
         buttonDelete = new Button("Delete");
         buttonDelete.setDisable(true);
         buttonDelete.setOnAction(e -> {
-            textArea.setText("\n...");
+            textArea.setText("\nLoading ...");
             Thread t = new Thread("creator") {
                 public void run() {
                     queueService.deleteQueue(queueUrl);
@@ -211,7 +214,7 @@ public class MainGUI extends Application {
 
         Button buttonListQueues = new Button("ListQueues");
         buttonListQueues.setOnAction(e -> {
-            textArea.setText("\n...");
+            textArea.setText("\nLoading ...");
             Thread t = new Thread("creator") {
                 public void run() {
                     queueService.listQueues();
@@ -236,18 +239,68 @@ public class MainGUI extends Application {
         return tabQueues;
     }
 
+    private Tab deleteMessageSection() {
+        tabDelete.setText("Delete");
+        tabDelete.setDisable(true);
+        VBox vbox = new VBox();
+        TextArea textArea = new TextArea();
+        textArea.setEditable(false);
+        TextField receiptHandleTxt = new TextField();
+
+        deleteMessageUrl.setDisable(true);
+        deleteMessageUrl.setPrefWidth(prefWidth);
+        Label queueLbl = new Label("Queue/Url");
+
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        int row = 0;
+        grid.add(queueLbl, 0, ++row);
+        grid.add(deleteMessageUrl, 0, ++row);
+
+        Button buttonDelete = new Button("Delete");
+        buttonDelete.setOnAction(e -> {
+            Thread t = new Thread("consume") {
+                public void run() {
+                    queueService.deleteMessage(queueUrl, receiptHandleTxt.getText());
+                    textArea.appendText(Log.getInfo());
+                }
+            };
+            t.start();
+        });
+
+        GridPane gridSub = new GridPane();
+        gridSub.add(buttonDelete, 0, 0);
+        gridSub.add(receiptHandleTxt, 1, 0);
+        gridSub.setHgap(10);
+        gridSub.setVgap(10);
+
+        grid.add(gridSub, 0, +row);
+        grid.add(textArea, 0, ++row);
+        vbox.getChildren().add(grid);
+
+        vbox.setAlignment(Pos.CENTER);
+        tabDelete.setContent(vbox);
+        return tabDelete;
+    }
+
     private void setQueue(String url) {
         if (url == null) {
             tabReceive.setDisable(true);
             tabSend.setDisable(true);
+            tabDelete.setDisable(true);
             buttonDelete.setDisable(true);
             buttonPurge.setDisable(true);
         } else {
             queueUrl = url;
-            sendMessageTxt.setText(queueUrl);
-            receiveMessageTxt.setText(queueUrl);
+            sendMessageUrl.setText(queueUrl);
+            receiveMessageUrl.setText(queueUrl);
+            deleteMessageUrl.setText(queueUrl);
             tabReceive.setDisable(false);
             tabSend.setDisable(false);
+            tabDelete.setDisable(false);
             buttonPurge.setDisable(false);
             buttonDelete.setDisable(false);
         }

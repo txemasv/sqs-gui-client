@@ -9,24 +9,23 @@ public class Log {
     private static String info = "";
 
     public static void sendMessage(String queue, String body) {
-        info = "\n" + "-> Sent at " +
-                " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "to" + ":              " + queue +
-                "\n" + "body" + ":         " + body + "\n";
+        info = "\n" + "-> Sent at " + dateFormatter.format(new Date()) +
+                "\n" + "to: " + queue +
+                "\n" + "body: " + body + "\n";
         print(info);
     }
 
     public static void receiveMessage(String queue, String receiptHandle, String body) {
-        info =  "\n" + "<- Received at " +
-                " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "from" + ":                  " + queue +
-                "\n" + "receiptHandle" + ":   " + receiptHandle +
-                "\n" + "body" + ":                 " + body + "\n";
+        info =  "\n" + "<- Received at " + dateFormatter.format(new Date()) +
+                "\n" + "from: " + queue +
+                "\n" + "receiptHandle: " + receiptHandle +
+                "\n" + "body: " + body + "\n";
         print(info);
     }
 
-    public static void deleteMessage(String receiptHandle) {
-        info =  "\n" + "(x) Delete Message" +
+    public static void deleteMessage(String queue, String receiptHandle) {
+        info =  "\n" + "Message deleted" +
+                "\n" + "from: " + queue +
                 " (" + dateFormatter.format(new Date()) + ")" +
                 "\n" + "receiptHandle" + ":\n" + receiptHandle + "\n";
         print(info);

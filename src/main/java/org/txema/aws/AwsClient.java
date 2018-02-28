@@ -54,7 +54,7 @@ public class AwsClient implements SqsClient {
         try {
             String awsQueueUrl = createQueue(fromUrl(queueUrl));
             sqs.deleteMessage(new DeleteMessageRequest(awsQueueUrl, receiptHandle));
-            Log.deleteMessage(receiptHandle);
+            Log.deleteMessage(queueUrl, receiptHandle);
         } catch (AmazonServiceException ex) {
             Log.exception(ex.getErrorMessage());
         }
