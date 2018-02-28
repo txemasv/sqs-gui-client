@@ -11,9 +11,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class MainGUI extends Application {
 
-    private SqsClient queueService = ApplicationContext.getInstance().getSqsClient();
+    private SqsClient sqsClient = ApplicationContext.getInstance().getSqsClient();
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private Tab tabSend = new Tab();
     private Tab tabReceive = new Tab();
     private Tab tabDelete = new Tab();
@@ -43,7 +47,6 @@ public class MainGUI extends Application {
         tabPane.getTabs().add(queuesSection());
         tabPane.getTabs().add(sendMessageSection());
         tabPane.getTabs().add(receiveMessageSection());
-        tabPane.getTabs().add(deleteMessageSection());
         borderPane.setCenter(tabPane);
 
         // bind to take available space
@@ -54,6 +57,8 @@ public class MainGUI extends Application {
         root.getChildren().add(borderPane);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(we -> executorService.shutdownNow());
     }
 
     private Tab sendMessageSection() {
@@ -91,13 +96,11 @@ public class MainGUI extends Application {
             if (newValue == null || !newValue.matches("^[0-9]\\d*$")) {
                 delayTxt.setText("0");
             }
-            Thread t = new Thread("producer") {
-                public void run() {
-                    queueService.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
-                    textArea.appendText(Log.getInfo());
-                }
+            Runnable run = () -> {
+                sqsClient.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
+                textArea.appendText(Log.getInfo());
             };
-            t.run();
+            executorService.submit(run);
 
         });
 
@@ -117,6 +120,7 @@ public class MainGUI extends Application {
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
+        TextField receiptHandleTxt = new TextField();
 
         receiveMessageUrl.setDisable(true);
         receiveMessageUrl.setPrefWidth(prefWidth);
@@ -133,17 +137,33 @@ public class MainGUI extends Application {
 
         Button buttonReceive = new Button("Receive");
         buttonReceive.setOnAction(e -> {
-            Thread t = new Thread("consume") {
-                public void run() {
-                    queueService.receiveMessage(queueUrl);
-                    textArea.appendText(Log.getInfo());
-                }
+            Runnable run = () -> {
+                sqsClient.receiveMessage(queueUrl);
+                textArea.appendText(Log.getInfo());
             };
-            t.start();
+            executorService.submit(run);
         });
 
         grid.add(buttonReceive, 0, ++row);
         grid.add(textArea, 0, ++row);
+
+        Button buttonDelete = new Button("Delete");
+        buttonDelete.setOnAction(e -> {
+            Runnable run = () -> {
+                sqsClient.deleteMessage(queueUrl, receiptHandleTxt.getText());
+                textArea.appendText(Log.getInfo());
+            };
+            executorService.submit(run);
+        });
+
+        GridPane gridSub = new GridPane();
+        gridSub.add(buttonDelete, 0, 0);
+        gridSub.add(receiptHandleTxt, 1, 0);
+        gridSub.setHgap(10);
+        gridSub.setVgap(10);
+
+        grid.add(gridSub, 0, ++row);
+
         vbox.getChildren().add(grid);
 
         vbox.setAlignment(Pos.CENTER);
@@ -172,14 +192,12 @@ public class MainGUI extends Application {
         Button buttonCreate = new Button("Get/Create");
         buttonCreate.setOnAction(e -> {
             textArea.setText("\nLoading ...");
-            Thread t = new Thread("creator") {
-                public void run() {
-                    String url = queueService.createQueue(queuesTxt.getText());
-                    setQueue(url);
-                    textArea.setText(Log.getInfo());
-                }
+            Runnable run = () -> {
+                String url = sqsClient.createQueue(queuesTxt.getText());
+                setQueue(url);
+                textArea.setText(Log.getInfo());
             };
-            t.start();
+            executorService.submit(run);
         });
 
         grid.add(buttonCreate, 0, ++row);
@@ -189,39 +207,33 @@ public class MainGUI extends Application {
         buttonPurge.setDisable(true);
         buttonPurge.setOnAction(e -> {
             textArea.setText("\nLoading ...");
-            Thread t = new Thread("creator") {
-                public void run() {
-                    queueService.purgeQueue(queueUrl);
-                    textArea.setText(Log.getInfo());
-                }
+            Runnable run = () -> {
+                sqsClient.purgeQueue(queueUrl);
+                textArea.setText(Log.getInfo());
             };
-            t.start();
+            executorService.submit(run);
         });
 
         buttonDelete = new Button("Delete");
         buttonDelete.setDisable(true);
         buttonDelete.setOnAction(e -> {
             textArea.setText("\nLoading ...");
-            Thread t = new Thread("creator") {
-                public void run() {
-                    queueService.deleteQueue(queueUrl);
-                    setQueue(null);
-                    textArea.setText(Log.getInfo());
-                }
+            Runnable run = () -> {
+                sqsClient.deleteQueue(queueUrl);
+                setQueue(null);
+                textArea.setText(Log.getInfo());
             };
-            t.start();
+            executorService.submit(run);
         });
 
         Button buttonListQueues = new Button("ListQueues");
         buttonListQueues.setOnAction(e -> {
             textArea.setText("\nLoading ...");
-            Thread t = new Thread("creator") {
-                public void run() {
-                    queueService.listQueues();
-                    textArea.setText(Log.getInfo());
-                }
+            Runnable run = () -> {
+                sqsClient.listQueues();
+                textArea.setText(Log.getInfo());
             };
-            t.start();
+            executorService.submit(run);
         });
 
         GridPane gridSub = new GridPane();
@@ -237,53 +249,6 @@ public class MainGUI extends Application {
         vbox.setAlignment(Pos.CENTER);
         tabQueues.setContent(vbox);
         return tabQueues;
-    }
-
-    private Tab deleteMessageSection() {
-        tabDelete.setText("Delete");
-        tabDelete.setDisable(true);
-        VBox vbox = new VBox();
-        TextArea textArea = new TextArea();
-        textArea.setEditable(false);
-        TextField receiptHandleTxt = new TextField();
-
-        deleteMessageUrl.setDisable(true);
-        deleteMessageUrl.setPrefWidth(prefWidth);
-        Label queueLbl = new Label("Queue/Url");
-
-        GridPane grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
-        grid.setHgap(10);
-        grid.setVgap(10);
-
-        int row = 0;
-        grid.add(queueLbl, 0, ++row);
-        grid.add(deleteMessageUrl, 0, ++row);
-
-        Button buttonDelete = new Button("Delete");
-        buttonDelete.setOnAction(e -> {
-            Thread t = new Thread("consume") {
-                public void run() {
-                    queueService.deleteMessage(queueUrl, receiptHandleTxt.getText());
-                    textArea.appendText(Log.getInfo());
-                }
-            };
-            t.start();
-        });
-
-        GridPane gridSub = new GridPane();
-        gridSub.add(buttonDelete, 0, 0);
-        gridSub.add(receiptHandleTxt, 1, 0);
-        gridSub.setHgap(10);
-        gridSub.setVgap(10);
-
-        grid.add(gridSub, 0, +row);
-        grid.add(textArea, 0, ++row);
-        vbox.getChildren().add(grid);
-
-        vbox.setAlignment(Pos.CENTER);
-        tabDelete.setContent(vbox);
-        return tabDelete;
     }
 
     private void setQueue(String url) {

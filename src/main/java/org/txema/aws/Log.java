@@ -9,14 +9,14 @@ public class Log {
     private static String info = "";
 
     public static void sendMessage(String queue, String body) {
-        info = "\n" + "-> Sent at " + dateFormatter.format(new Date()) +
+        info = "\n" + "--> Sent at " + dateFormatter.format(new Date()) +
                 "\n" + "to: " + queue +
                 "\n" + "body: " + body + "\n";
         print(info);
     }
 
     public static void receiveMessage(String queue, String receiptHandle, String body) {
-        info =  "\n" + "<- Received at " + dateFormatter.format(new Date()) +
+        info =  "\n" + "<-- Received at " + dateFormatter.format(new Date()) +
                 "\n" + "from: " + queue +
                 "\n" + "receiptHandle: " + receiptHandle +
                 "\n" + "body: " + body + "\n";
@@ -24,10 +24,9 @@ public class Log {
     }
 
     public static void deleteMessage(String queue, String receiptHandle) {
-        info =  "\n" + "Message deleted" +
+        info =  "\n" + "(x) Deleted at " + dateFormatter.format(new Date()) +
                 "\n" + "from: " + queue +
-                " (" + dateFormatter.format(new Date()) + ")" +
-                "\n" + "receiptHandle" + ":\n" + receiptHandle + "\n";
+                "\n" + "receiptHandle:" + receiptHandle + "\n";
         print(info);
     }
 
@@ -37,7 +36,7 @@ public class Log {
     }
 
     public static void queueLoaded(String url) {
-        info = "\nQueueUrl = '" + url + "'." + "\n";
+        info = "\nSelected Queue = '" + url + "'." + "\n";
         print(info);
     }
 
