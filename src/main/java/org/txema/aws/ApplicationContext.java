@@ -4,6 +4,11 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * A {@code ApplicationContext} represents the entry to the Application.
  * It selects the configuration and the implementation for SqsClient
@@ -22,20 +27,36 @@ public class ApplicationContext {
     }
 
     private void instanceSqsClient() {
-        /*
-        YOUR_CLIENT_IMPLEMENTATION_TO_ACCESS_TO_AWS
-        -------------------------------------------
-        Example:
-        AWSCredentials awsCredentials = new BasicAWSCredentials("YOUR_ACCESS_KEY", "YOUR_SECRET_KEY");
-        AmazonSQSClient client = new AmazonSQSClient(awsCredentials);
-        */
-        AWSCredentials awsCredentials = new BasicAWSCredentials("AKIAJKGMFBCL7OGC3CEA", "0NQKjTDTYbXJqfKeazp08LAAeescR2pzzkXYpsAx");
+        String accessKey = getProperties().getProperty("accessKey", "");
+        String secretKey = getProperties().getProperty("secretKey", "");
+        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
         AmazonSQSClient client = new AmazonSQSClient(awsCredentials); //YOUR_CLIENT_TO_ACCESS_AWS
         sqsClient = new AwsClient(client);
     }
 
     public SqsClient getSqsClient() {
         return sqsClient;
+    }
+
+    private static Properties getProperties() {
+        Properties prop = new Properties();
+        InputStream input = null;
+        try {
+            input = new FileInputStream("src/main/resources/credentials.properties");
+            // load a properties file
+            prop.load(input);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return prop;
     }
 
 }
