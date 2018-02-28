@@ -1,6 +1,7 @@
 package org.txema.aws;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -23,9 +24,8 @@ public class MainGUI extends Application {
     private Tab tabDelete = new Tab();
     private Tab tabQueues = new Tab();
     private TextField queuesTxt = new TextField();
-    private TextField sendMessageUrl = new TextField();
-    private TextField receiveMessageUrl = new TextField();
-    private TextField deleteMessageUrl = new TextField();
+    private RadioButton sendMessageUrl = new RadioButton();
+    private RadioButton receiveMessageUrl = new RadioButton();
     private String queueUrl = "";
     private static final double height = 600;
     private static final double width = 800;
@@ -67,20 +67,21 @@ public class MainGUI extends Application {
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
-        textArea.setScrollLeft(10);
+        textArea.setPrefWidth(prefWidth);
 
-        sendMessageUrl.setDisable(true);
-        sendMessageUrl.setPrefWidth(prefWidth);
-        Label queueLbl = new Label("Queue/Url");
+        Label queueLbl = new Label("Queue");
         TextField delayTxt = new TextField("0");
         Label delayLbl = new Label("Delay");
         TextField messageTxt = new TextField("");
-        Label messageLbl = new Label("Message/s");
+        Label messageLbl = new Label("MessageBody");
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
         grid.setVgap(10);
+
+        sendMessageUrl.setToggleGroup(new ToggleGroup());
+        sendMessageUrl.setSelected(true);
 
         int row = 0;
         grid.add(queueLbl, 0, row);
@@ -120,11 +121,15 @@ public class MainGUI extends Application {
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
+        textArea.setPrefWidth(prefWidth);
+        textArea.setScrollLeft(10);
+
         TextField receiptHandleTxt = new TextField();
 
-        receiveMessageUrl.setDisable(true);
-        receiveMessageUrl.setPrefWidth(prefWidth);
-        Label queueLbl = new Label("Queue/Url");
+        receiveMessageUrl.setToggleGroup(new ToggleGroup());
+        receiveMessageUrl.setSelected(true);
+
+        Label queueLbl = new Label("Queue");
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
@@ -176,9 +181,9 @@ public class MainGUI extends Application {
         VBox vbox = new VBox();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
+        textArea.setPrefWidth(prefWidth);
 
         Label queueLbl = new Label("Queue/Url");
-        queuesTxt.setPrefWidth(prefWidth);
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
@@ -197,7 +202,7 @@ public class MainGUI extends Application {
                 setQueue(url);
                 textArea.setText(Log.getInfo());
             };
-            executorService.submit(run);
+            Platform.runLater(run);
         });
 
         grid.add(buttonCreate, 0, ++row);
@@ -260,9 +265,8 @@ public class MainGUI extends Application {
             buttonPurge.setDisable(true);
         } else {
             queueUrl = url;
-            sendMessageUrl.setText(queueUrl);
-            receiveMessageUrl.setText(queueUrl);
-            deleteMessageUrl.setText(queueUrl);
+            sendMessageUrl.setText(fromUrl(queueUrl));
+            receiveMessageUrl.setText(fromUrl(queueUrl));
             tabReceive.setDisable(false);
             tabSend.setDisable(false);
             tabDelete.setDisable(false);
@@ -270,6 +274,14 @@ public class MainGUI extends Application {
             buttonDelete.setDisable(false);
         }
     }
+
+    private String fromUrl(String queueUrl) {
+        String queueName;
+        String[] parts = queueUrl.split("/");
+        queueName = parts[parts.length - 1];
+        return queueName;
+    }
+
 
     public static void main(String[] args) {
         Application.launch(args);

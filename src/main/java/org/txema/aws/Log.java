@@ -9,29 +9,29 @@ public class Log {
     private static String info = "";
 
     public static void sendMessage(String queue, String body) {
-        info = "\n" + "--> Sent at " + dateFormatter.format(new Date()) +
+        info = "\n" + "<-- Sent at " + dateFormatter.format(new Date()) +
                 "\n" + "to: " + queue +
                 "\n" + "body: " + body + "\n";
         print(info);
     }
 
     public static void receiveMessage(String queue, String receiptHandle, String body) {
-        info =  "\n" + "<-- Received at " + dateFormatter.format(new Date()) +
+        info = "\n" + "--> Received at " + dateFormatter.format(new Date()) +
                 "\n" + "from: " + queue +
-                "\n" + "receiptHandle: " + receiptHandle +
-                "\n" + "body: " + body + "\n";
+                "\n" + "body: " + body +
+                "\n" + "receiptHandle: " + receiptHandle + "\n";
         print(info);
     }
 
     public static void deleteMessage(String queue, String receiptHandle) {
-        info =  "\n" + "(x) Deleted at " + dateFormatter.format(new Date()) +
+        info = "\n" + "(x) Deleted at " + dateFormatter.format(new Date()) +
                 "\n" + "from: " + queue +
-                "\n" + "receiptHandle:" + receiptHandle + "\n";
+                "\n" + "receiptHandle: " + receiptHandle + "\n";
         print(info);
     }
 
     public static void getQueue(String name) {
-        info =  "\nGet queue '" + name + "'." + "\n";
+        info = "\nGet queue '" + name + "'." + "\n";
         print(info);
     }
 
@@ -41,7 +41,7 @@ public class Log {
     }
 
     public static void queuesList(String urls) {
-        info =  "\nList of queues: \n\n" + urls + "\n";
+        info = "\nList of queues: \n\n" + urls + "\n";
         print(info);
     }
 
