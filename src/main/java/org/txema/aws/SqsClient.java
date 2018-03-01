@@ -37,6 +37,14 @@ public interface SqsClient {
     void setVisibilityTimeout(String queueUrl, Integer timeSeconds);
 
     /**
+     * Get the visibility timeout of a queue.
+     *
+     * @param queueUrl:    the url of the queue.
+     * @return the timeout value of this queue.
+     */
+    String getVisibilityTimeout(String queueUrl);
+
+    /**
      * Creates a new queue or gets one existent if already exists specified by the queueName parameter.
      *
      * @param queueName: the name of the queue

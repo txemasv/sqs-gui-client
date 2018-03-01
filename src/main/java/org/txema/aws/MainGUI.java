@@ -206,6 +206,7 @@ public class MainGUI extends Application {
             Runnable run = () -> {
                 String url = sqsClient.createQueue(queuesTxt.getText());
                 setQueue(url);
+                txtTimeout.setText(sqsClient.getVisibilityTimeout(queueUrl));
                 textArea.setText(Log.getInfo());
             };
             Platform.runLater(run);

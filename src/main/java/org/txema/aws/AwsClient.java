@@ -74,6 +74,21 @@ public class AwsClient implements SqsClient {
     }
 
     @Override
+    public String getVisibilityTimeout(String queueUrl) {
+        String timeout = null;
+        try {
+            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            List<String> attributeNames = new ArrayList<>();
+            attributeNames.add("VisibilityTimeout");
+            GetQueueAttributesResult result = sqs.getQueueAttributes(new GetQueueAttributesRequest(awsQueueUrl, attributeNames));
+            timeout = result.getAttributes().get("VisibilityTimeout");
+        } catch (AmazonServiceException ex) {
+            Log.exception(ex.getErrorMessage());
+        }
+        return timeout;
+    }
+
+    @Override
     public String createQueue(String queueName) {
         String awsQueueUrl = null;
         Log.getQueue(queueName);
