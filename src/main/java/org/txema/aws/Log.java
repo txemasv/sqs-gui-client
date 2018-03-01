@@ -41,7 +41,7 @@ public class Log {
     }
 
     public static void queuesList(String urls) {
-        info = "\nList of queues: \n\n" + urls + "\n";
+        info = "\nQueues list: \n" + urls + "\n";
         print(info);
     }
 
@@ -69,6 +69,10 @@ public class Log {
         info = "\n" + "{empty}" +
                 " (" + dateFormatter.format(new Date()) + ")" + "\n";
         print(info);
+    }
+
+    public static String incorrect(String field) {
+        return "\n" + "Incorrect value for field '" + field + "'\n";
     }
 
     public static String getInfo() {
