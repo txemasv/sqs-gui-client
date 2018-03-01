@@ -75,20 +75,42 @@ public class MainGUI extends Application {
         textArea.setEditable(false);
         textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
 
-        TextField accessTxt = new TextField();
         Credentials credentials = ApplicationContext.getCredentials();
-        accessTxt.setText(credentials.getAccessKey());
+        CheckBox checkBox = new CheckBox("Show Credentials");
+        vbox.getChildren().add(checkBox);
+
+        //AccessKey
         Label accessLbl = new Label("AccessKey");
-        TextField secretTxt = new TextField();
-        secretTxt.setText(credentials.getSecretKey());
+        TextField accessTxt = new TextField();
+        accessTxt.setManaged(false);
+        accessTxt.setVisible(false);
+        final PasswordField accessTxtPsw = new PasswordField();
+        accessTxt.managedProperty().bind(checkBox.selectedProperty());
+        accessTxt.visibleProperty().bind(checkBox.selectedProperty());
+        accessTxt.setText(credentials.getAccessKey());
+        accessTxtPsw.setText(credentials.getAccessKey());
+        accessTxtPsw.managedProperty().bind(checkBox.selectedProperty().not());
+        accessTxtPsw.visibleProperty().bind(checkBox.selectedProperty().not());
+        accessTxt.textProperty().bindBidirectional(accessTxtPsw.textProperty());
+
+        //SecretKey
         Label secretLbl = new Label("SecretKey");
+        TextField secretTxt = new TextField();
+        secretTxt.setManaged(false);
+        secretTxt.setVisible(false);
+        final PasswordField secretTxtPsw = new PasswordField();
+        secretTxt.managedProperty().bind(checkBox.selectedProperty());
+        secretTxt.visibleProperty().bind(checkBox.selectedProperty());
+        secretTxt.setText(credentials.getSecretKey());
+        secretTxtPsw.setText(credentials.getSecretKey());
+        secretTxtPsw.managedProperty().bind(checkBox.selectedProperty().not());
+        secretTxtPsw.visibleProperty().bind(checkBox.selectedProperty().not());
+        secretTxt.textProperty().bindBidirectional(secretTxtPsw.textProperty());
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
         grid.setVgap(10);
-
-        int row = 0;
 
         Button buttonSave = new Button("Connect");
         buttonSave.setOnAction(e -> {
@@ -106,10 +128,13 @@ public class MainGUI extends Application {
             executorService.submit(run);
         });
 
+        int row = 0;
         grid.add(accessLbl, 0, ++row);
         grid.add(accessTxt, 0, ++row);
+        grid.add(accessTxtPsw, 0, row);
         grid.add(secretLbl, 0, ++row);
         grid.add(secretTxt, 0, ++row);
+        grid.add(secretTxtPsw, 0, row);
         grid.add(buttonSave, 0, ++row);
         grid.add(textArea, 0, ++row);
         vbox.getChildren().add(grid);
@@ -188,6 +213,7 @@ public class MainGUI extends Application {
         textArea.setScrollLeft(10);
 
         TextField receiptHandleTxt = new TextField();
+        receiptHandleTxt.setPromptText("Receipt handle");
         receiveMessageUrl.setToggleGroup(new ToggleGroup());
         receiveMessageUrl.setSelected(true);
 

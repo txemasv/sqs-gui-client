@@ -148,7 +148,7 @@ public class AwsClient implements SqsClient {
             client.listQueues();
             return true;
         } catch (AmazonServiceException ex) {
-            Log.exception(ex.getErrorMessage() + "\nThe credentials will not be saved.");
+            Log.exception(ex.getErrorMessage() + "\nCredentials will not be saved.");
         } catch (Exception ex) {
             Log.exception(ex.getMessage());
         }
