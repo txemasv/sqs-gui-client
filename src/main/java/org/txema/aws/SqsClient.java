@@ -69,4 +69,9 @@ public interface SqsClient {
      * Listing all queues in your account.
      */
     void listQueues();
+
+    /**
+     * Test the connection based on credentials.
+     */
+    boolean testCredentials(String accessKey, String secretKey);
 }

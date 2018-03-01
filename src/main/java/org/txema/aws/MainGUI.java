@@ -3,6 +3,7 @@ package org.txema.aws;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -19,6 +20,8 @@ public class MainGUI extends Application {
 
     private SqsClient sqsClient = ApplicationContext.getInstance().getSqsClient();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
+    private TabPane tabPane = new TabPane();
+    private Tab tabCredentials = new Tab();
     private Tab tabSend = new Tab();
     private Tab tabReceive = new Tab();
     private Tab tabDelete = new Tab();
@@ -30,7 +33,7 @@ public class MainGUI extends Application {
     private String queueUrl = "";
     private static final double height = 600;
     private static final double width = 820;
-    private static final double prefWidth = 3 * width / 4;
+    private static final double prefWidth = 7 * width / 8;
     private Button buttonDelete;
     private Button buttonPurge;
     private Button buttonTimeout;
@@ -42,11 +45,11 @@ public class MainGUI extends Application {
         Group root = new Group();
         Scene scene = new Scene(root, width, height, Color.WHITE);
 
-        TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         // set tabs
         BorderPane borderPane = new BorderPane();
+        tabPane.getTabs().add(credentialsSection());
         tabPane.getTabs().add(queuesSection());
         tabPane.getTabs().add(sendMessageSection());
         tabPane.getTabs().add(receiveMessageSection());
@@ -64,19 +67,70 @@ public class MainGUI extends Application {
         primaryStage.setOnCloseRequest(we -> executorService.shutdownNow());
     }
 
+    private Tab credentialsSection() {
+        tabCredentials.setText("Credentials");
+        VBox vbox = new VBox();
+        vbox.setPrefWidth(prefWidth);
+        TextArea textArea = new TextArea();
+        textArea.setEditable(false);
+        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
+
+        TextField accessTxt = new TextField();
+        Credentials credentials = ApplicationContext.getCredentials();
+        accessTxt.setText(credentials.getAccessKey());
+        Label accessLbl = new Label("AccessKey");
+        TextField secretTxt = new TextField();
+        secretTxt.setText(credentials.getSecretKey());
+        Label secretLbl = new Label("SecretKey");
+
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        int row = 0;
+
+        Button buttonSave = new Button("Connect");
+        buttonSave.setOnAction(e -> {
+            textArea.setText("\nVerifying Credentials...");
+            Runnable run = () -> {
+                String accessKey = accessTxt.getText();
+                String secretKey = secretTxt.getText();
+                if (sqsClient.testCredentials(accessKey, secretKey)) {
+                    sqsClient = ApplicationContext.getInstance().renewCredentials(new Credentials(accessKey, secretKey));
+                    tabQueues.setDisable(false);
+                    tabPane.getSelectionModel().select(tabQueues);
+                }
+                textArea.setText(Log.getInfo());
+            };
+            executorService.submit(run);
+        });
+
+        grid.add(accessLbl, 0, ++row);
+        grid.add(accessTxt, 0, ++row);
+        grid.add(secretLbl, 0, ++row);
+        grid.add(secretTxt, 0, ++row);
+        grid.add(buttonSave, 0, ++row);
+        grid.add(textArea, 0, ++row);
+        vbox.getChildren().add(grid);
+        vbox.setAlignment(Pos.CENTER);
+        tabCredentials.setContent(vbox);
+
+        return tabCredentials;
+    }
+
     private Tab sendMessageSection() {
         tabSend.setText("Send");
         tabSend.setDisable(true);
         VBox vbox = new VBox();
+        vbox.setPrefWidth(prefWidth);
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
-        textArea.setPrefWidth(prefWidth);
+        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
 
         TextField delayTxt = new TextField("0");
-        delayTxt.setPrefWidth(prefWidth);
         Label delayLbl = new Label("Delay");
         TextField messageTxt = new TextField("");
-        messageTxt.setPrefWidth(prefWidth);
         Label messageLbl = new Label("MessageBody");
 
         GridPane grid = new GridPane();
@@ -127,14 +181,13 @@ public class MainGUI extends Application {
         tabReceive.setText("Receive");
         tabReceive.setDisable(true);
         VBox vbox = new VBox();
+        vbox.setPrefWidth(prefWidth);
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
-        textArea.setPrefWidth(prefWidth);
+        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
         textArea.setScrollLeft(10);
 
         TextField receiptHandleTxt = new TextField();
-        receiptHandleTxt.setPrefWidth(prefWidth);
-
         receiveMessageUrl.setToggleGroup(new ToggleGroup());
         receiveMessageUrl.setSelected(true);
 
@@ -184,9 +237,11 @@ public class MainGUI extends Application {
 
     private Tab queuesSection() {
         tabQueues.setText("Queue");
+        tabQueues.setDisable(true);
         VBox vbox = new VBox();
+        vbox.setPrefWidth(prefWidth);
         TextArea textArea = new TextArea();
-        textArea.setPrefWidth(prefWidth);
+        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
         textArea.setEditable(false);
 
         Label queueLbl = new Label("Queue/Url");
@@ -267,7 +322,7 @@ public class MainGUI extends Application {
             if (!txtTimeout.getText().isEmpty() && txtTimeout.getText().matches("\\d*")) {
                 executorService.submit(run);
             } else {
-                textArea.setText(Log.incorrect("Timeout"));
+                textArea.setText(Log.incorrect("VisibilityTimeout"));
             }
         });
 

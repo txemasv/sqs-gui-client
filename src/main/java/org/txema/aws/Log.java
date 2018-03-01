@@ -65,14 +65,19 @@ public class Log {
         print(info);
     }
 
+    public static void message(String message) {
+        info = "\n" + message + "\n";
+        print(info);
+    }
+
     public static void empty() {
         info = "\n" + "{empty}" +
                 " (" + dateFormatter.format(new Date()) + ")" + "\n";
         print(info);
     }
 
-    public static String incorrect(String field) {
-        return "\n" + "Incorrect value for field '" + field + "'\n";
+    public static String incorrect(String parameter) {
+        return "\n" + "Incorrect value for parameter '" + parameter + "'\n";
     }
 
     public static String getInfo() {
