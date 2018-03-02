@@ -3,7 +3,6 @@ package org.txema.aws;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -20,16 +19,18 @@ public class MainGUI extends Application {
 
     private SqsClient sqsClient = ApplicationContext.getInstance().getSqsClient();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
-    private TabPane tabPane = new TabPane();
-    private Tab tabCredentials = new Tab();
-    private Tab tabSend = new Tab();
-    private Tab tabReceive = new Tab();
-    private Tab tabDelete = new Tab();
-    private Tab tabQueues = new Tab();
-    private TextField queuesTxt = new TextField();
-    private RadioButton queuesUrl = new RadioButton("No queue selected");
-    private RadioButton sendMessageUrl = new RadioButton();
-    private RadioButton receiveMessageUrl = new RadioButton();
+    private TabPane tabPane;
+    private Tab tabSend;
+    private Tab tabReceive;
+    private Tab tabQueues;
+    private TextField inputQueue;
+    private TextField inputTimeout;
+    private TextField inputReceiptHandle;
+    private TextField inputBodyMessage;
+    private TextField inputDelay;
+    private RadioButton urlQueuesSection;
+    private RadioButton urlSendSection;
+    private RadioButton urlReceiveSection;
     private String queueUrl = "";
     private static final double height = 600;
     private static final double width = 820;
@@ -37,13 +38,28 @@ public class MainGUI extends Application {
     private Button buttonDelete;
     private Button buttonPurge;
     private Button buttonTimeout;
-    private TextField txtTimeout = new TextField();
+    private TextArea consoleQueues;
+    private TextArea consoleReceive;
+    private TextArea consoleSend;
 
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("SQS Client");
+        primaryStage.setScene(contentScene());
+        primaryStage.show();
+        primaryStage.setOnCloseRequest(we -> executorService.shutdownNow());
+    }
+
+    private Scene contentScene() {
         Group root = new Group();
         Scene scene = new Scene(root, width, height, Color.WHITE);
+
+        tabPane = new TabPane();
+        inputQueue = new TextField();
+        urlQueuesSection = new RadioButton("No queue selected");
+        urlSendSection = new RadioButton();
+        urlReceiveSection = new RadioButton();
+        inputTimeout = new TextField();
 
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
@@ -61,19 +77,19 @@ public class MainGUI extends Application {
 
         // set scene
         root.getChildren().add(borderPane);
-        primaryStage.setScene(scene);
-        primaryStage.show();
 
-        primaryStage.setOnCloseRequest(we -> executorService.shutdownNow());
+        return scene;
     }
 
     private Tab credentialsSection() {
-        tabCredentials.setText("Credentials");
+        Tab tabCredentials = new Tab("Credentials");
         VBox vbox = new VBox();
         vbox.setPrefWidth(prefWidth);
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
         textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
+        final ProgressIndicator pi = new ProgressIndicator();
+        pi.setVisible(false);
 
         Credentials credentials = ApplicationContext.getInstance().getCredentials();
         CheckBox checkBox = new CheckBox("Show Credentials");
@@ -115,6 +131,7 @@ public class MainGUI extends Application {
         Button buttonSave = new Button("Connect");
         buttonSave.setOnAction(e -> {
             textArea.setText("\nVerifying Credentials...");
+            pi.setVisible(true);
             Runnable run = () -> {
                 String accessKey = accessTxt.getText();
                 String secretKey = secretTxt.getText();
@@ -122,10 +139,13 @@ public class MainGUI extends Application {
                     sqsClient = ApplicationContext.getInstance().renewSqsClient(accessKey, secretKey);
                     tabQueues.setDisable(false);
                     tabPane.getSelectionModel().select(tabQueues);
+                    clearAll();
+                    setQueue(null);
                 }
                 textArea.setText(Log.getInfo());
+                pi.setVisible(false);
             };
-            executorService.submit(run);
+            Platform.runLater(run);
         });
 
         int row = 0;
@@ -137,6 +157,7 @@ public class MainGUI extends Application {
         grid.add(secretTxtPsw, 0, row);
         grid.add(buttonSave, 0, ++row);
         grid.add(textArea, 0, ++row);
+        grid.add(pi, 0, ++row);
         vbox.getChildren().add(grid);
         vbox.setAlignment(Pos.CENTER);
         tabCredentials.setContent(vbox);
@@ -145,17 +166,17 @@ public class MainGUI extends Application {
     }
 
     private Tab sendMessageSection() {
-        tabSend.setText("Send");
+        tabSend = new Tab("Send");
         tabSend.setDisable(true);
         VBox vbox = new VBox();
         vbox.setPrefWidth(prefWidth);
-        TextArea textArea = new TextArea();
-        textArea.setEditable(false);
-        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
+        consoleSend = new TextArea();
+        consoleSend.setEditable(false);
+        consoleSend.prefWidthProperty().bind(vbox.prefWidthProperty());
 
-        TextField delayTxt = new TextField("0");
+        inputDelay = new TextField("0");
         Label delayLbl = new Label("Delay");
-        TextField messageTxt = new TextField("");
+        inputBodyMessage = new TextField("");
         Label messageLbl = new Label("MessageBody");
 
         GridPane grid = new GridPane();
@@ -163,37 +184,36 @@ public class MainGUI extends Application {
         grid.setHgap(10);
         grid.setVgap(10);
 
-        sendMessageUrl.setToggleGroup(new ToggleGroup());
-        sendMessageUrl.setSelected(true);
+        urlSendSection.setToggleGroup(new ToggleGroup());
+        urlSendSection.setSelected(true);
 
         int row = 0;
-        grid.add(sendMessageUrl, 0, ++row);
+        grid.add(urlSendSection, 0, ++row);
 
         Button buttonSend = new Button("Send");
         buttonSend.setOnAction(e -> {
-            String newValue = delayTxt.getText();
+            String newValue = inputDelay.getText();
             if (newValue == null || !newValue.matches("^[0-9]\\d*$")) {
-                delayTxt.setText("0");
+                inputDelay.setText("0");
             }
             Runnable run = () -> {
-                sqsClient.sendMessage(queueUrl, Integer.valueOf(delayTxt.getText()), messageTxt.getText());
-                textArea.appendText(Log.getInfo());
+                sqsClient.sendMessage(queueUrl, Integer.valueOf(inputDelay.getText()), inputBodyMessage.getText());
+                consoleSend.appendText(Log.getInfo());
             };
             executorService.submit(run);
-
         });
 
         GridPane gridSub = new GridPane();
         gridSub.setHgap(10);
         gridSub.setVgap(10);
         gridSub.add(delayLbl, 0, 0);
-        gridSub.add(delayTxt, 1, 0);
+        gridSub.add(inputDelay, 1, 0);
         gridSub.add(messageLbl, 0, 1);
-        gridSub.add(messageTxt, 1, 1);
+        gridSub.add(inputBodyMessage, 1, 1);
         gridSub.add(buttonSend, 0, 2);
 
         grid.add(gridSub, 0, ++row);
-        grid.add(textArea, 0, ++row);
+        grid.add(consoleSend, 0, ++row);
 
         vbox.getChildren().add(grid);
         vbox.setAlignment(Pos.CENTER);
@@ -203,19 +223,19 @@ public class MainGUI extends Application {
     }
 
     private Tab receiveMessageSection() {
-        tabReceive.setText("Receive");
+        tabReceive = new Tab("Receive");
         tabReceive.setDisable(true);
         VBox vbox = new VBox();
         vbox.setPrefWidth(prefWidth);
-        TextArea textArea = new TextArea();
-        textArea.setEditable(false);
-        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
-        textArea.setScrollLeft(10);
+        consoleReceive = new TextArea();
+        consoleReceive.setEditable(false);
+        consoleReceive.prefWidthProperty().bind(vbox.prefWidthProperty());
+        consoleReceive.setScrollLeft(10);
 
-        TextField receiptHandleTxt = new TextField();
-        receiptHandleTxt.setPromptText("Receipt handle");
-        receiveMessageUrl.setToggleGroup(new ToggleGroup());
-        receiveMessageUrl.setSelected(true);
+        inputReceiptHandle = new TextField();
+        inputReceiptHandle.setPromptText("Receipt handle");
+        urlReceiveSection.setToggleGroup(new ToggleGroup());
+        urlReceiveSection.setSelected(true);
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
@@ -223,32 +243,32 @@ public class MainGUI extends Application {
         grid.setVgap(10);
 
         int row = 0;
-        grid.add(receiveMessageUrl, 0, ++row);
+        grid.add(urlReceiveSection, 0, ++row);
 
         Button buttonReceive = new Button("Receive");
         buttonReceive.setOnAction(e -> {
             Runnable run = () -> {
                 sqsClient.receiveMessage(queueUrl);
-                textArea.appendText(Log.getInfo());
+                consoleReceive.appendText(Log.getInfo());
             };
             executorService.submit(run);
         });
 
         grid.add(buttonReceive, 0, ++row);
-        grid.add(textArea, 0, ++row);
+        grid.add(consoleReceive, 0, ++row);
 
         Button buttonDelete = new Button("Delete");
         buttonDelete.setOnAction(e -> {
             Runnable run = () -> {
-                sqsClient.deleteMessage(queueUrl, receiptHandleTxt.getText());
-                textArea.appendText(Log.getInfo());
+                sqsClient.deleteMessage(queueUrl, inputReceiptHandle.getText());
+                consoleReceive.appendText(Log.getInfo());
             };
             executorService.submit(run);
         });
 
         GridPane gridSub = new GridPane();
         gridSub.add(buttonDelete, 0, 0);
-        gridSub.add(receiptHandleTxt, 1, 0);
+        gridSub.add(inputReceiptHandle, 1, 0);
         gridSub.setHgap(10);
         gridSub.setVgap(10);
 
@@ -262,13 +282,13 @@ public class MainGUI extends Application {
     }
 
     private Tab queuesSection() {
-        tabQueues.setText("Queue");
+        tabQueues = new Tab("Queue");
         tabQueues.setDisable(true);
         VBox vbox = new VBox();
         vbox.setPrefWidth(prefWidth);
-        TextArea textArea = new TextArea();
-        textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
-        textArea.setEditable(false);
+        consoleQueues = new TextArea();
+        consoleQueues.prefWidthProperty().bind(vbox.prefWidthProperty());
+        consoleQueues.setEditable(false);
 
         Label queueLbl = new Label("Queue/Url");
 
@@ -279,30 +299,30 @@ public class MainGUI extends Application {
 
         int row = 0;
         grid.add(queueLbl, 0, ++row);
-        grid.add(queuesTxt, 0, ++row);
+        grid.add(inputQueue, 0, ++row);
 
         Button buttonCreate = new Button("Get/Create");
         buttonCreate.setOnAction(e -> {
+            consoleQueues.setText("\nLoading...");
             Runnable run = () -> {
-                textArea.setText("Loading...");
-                textArea.setText(Log.getInfo());
-                String url = sqsClient.createQueue(queuesTxt.getText());
+                consoleQueues.setText(Log.getInfo());
+                String url = sqsClient.createQueue(inputQueue.getText());
                 setQueue(url);
                 String timeout = sqsClient.getVisibilityTimeout(queueUrl);
-                txtTimeout.setText(timeout);
-                textArea.setText(Log.getInfo());
+                inputTimeout.setText(timeout);
+                consoleQueues.setText(Log.getInfo());
             };
             Platform.runLater(run);
         });
 
         Button buttonListQueues = new Button("ListQueues");
         buttonListQueues.setOnAction(e -> {
-            textArea.setText("\nLoading...");
+            consoleQueues.setText("\nLoading...");
             Runnable run = () -> {
                 sqsClient.listQueues();
-                textArea.setText(Log.getInfo());
+                consoleQueues.setText(Log.getInfo());
             };
-            Platform.runLater(run);
+            executorService.submit(run);
         });
 
         GridPane gridTop = new GridPane();
@@ -312,27 +332,26 @@ public class MainGUI extends Application {
         gridTop.setVgap(10);
 
         grid.add(gridTop, 0, ++row);
-        grid.add(textArea, 0, ++row);
-
+        grid.add(consoleQueues, 0, ++row);
         buttonPurge = new Button("Purge");
         buttonPurge.setDisable(true);
         buttonPurge.setOnAction(e -> {
-            textArea.setText("\nLoading...");
+            consoleQueues.setText("\nLoading...");
             Runnable run = () -> {
                 sqsClient.purgeQueue(queueUrl);
-                textArea.setText(Log.getInfo());
+                consoleQueues.setText(Log.getInfo());
             };
-            Platform.runLater(run);
+            executorService.submit(run);
         });
 
         buttonDelete = new Button("Delete");
         buttonDelete.setDisable(true);
         buttonDelete.setOnAction(e -> {
-            textArea.setText("\nLoading...");
+            consoleQueues.setText("\nLoading...");
             Runnable run = () -> {
                 sqsClient.deleteQueue(queueUrl);
                 setQueue(null);
-                textArea.setText(Log.getInfo());
+                consoleQueues.setText(Log.getInfo());
             };
             Platform.runLater(run);
         });
@@ -340,32 +359,32 @@ public class MainGUI extends Application {
         buttonTimeout = new Button("Timeout");
         buttonTimeout.setDisable(true);
         buttonTimeout.setOnAction(e -> {
-            textArea.setText("\nLoading...");
+            consoleQueues.setText("\nLoading...");
             Runnable run = () -> {
-                Integer timeout = Integer.valueOf(txtTimeout.getText());
+                Integer timeout = Integer.valueOf(inputTimeout.getText());
                 sqsClient.setVisibilityTimeout(queueUrl, timeout);
-                textArea.setText(Log.getInfo());
+                consoleQueues.setText(Log.getInfo());
 
             };
-            if (!txtTimeout.getText().isEmpty() && txtTimeout.getText().matches("\\d*")) {
-                Platform.runLater(run);
+            if (!inputTimeout.getText().isEmpty() && inputTimeout.getText().matches("\\d*")) {
+                executorService.submit(run);
             } else {
-                textArea.setText(Log.incorrect("VisibilityTimeout"));
+                consoleQueues.setText(Log.incorrect("VisibilityTimeout"));
             }
         });
 
-        queuesUrl.setToggleGroup(new ToggleGroup());
-        queuesUrl.setSelected(true);
+        urlQueuesSection.setToggleGroup(new ToggleGroup());
+        urlQueuesSection.setSelected(true);
 
         GridPane gridSub = new GridPane();
         gridSub.add(buttonPurge, 0, 0);
         gridSub.add(buttonDelete, 1, 0);
         gridSub.add(buttonTimeout, 2, 0);
-        gridSub.add(txtTimeout, 3, 0);
+        gridSub.add(inputTimeout, 3, 0);
         gridSub.setHgap(10);
         gridSub.setVgap(10);
 
-        grid.add(queuesUrl, 0, ++row);
+        grid.add(urlQueuesSection, 0, ++row);
         grid.add(gridSub, 0, ++row);
 
         vbox.getChildren().add(grid);
@@ -378,28 +397,37 @@ public class MainGUI extends Application {
         if (url == null) {
             tabReceive.setDisable(true);
             tabSend.setDisable(true);
-            tabDelete.setDisable(true);
             buttonDelete.setDisable(true);
             buttonPurge.setDisable(true);
             buttonTimeout.setDisable(true);
-            txtTimeout.setDisable(true);
-            queuesUrl.setText("No queue selected");
+            inputTimeout.setDisable(true);
+            urlQueuesSection.setText("No queue selected");
         } else {
             queueUrl = url;
-            queuesUrl.setText(queueUrl);
-            sendMessageUrl.setText(queueUrl);
-            receiveMessageUrl.setText(queueUrl);
+            urlQueuesSection.setText(queueUrl);
+            urlSendSection.setText(queueUrl);
+            urlReceiveSection.setText(queueUrl);
             tabReceive.setDisable(false);
             tabSend.setDisable(false);
-            tabDelete.setDisable(false);
             buttonPurge.setDisable(false);
             buttonDelete.setDisable(false);
             buttonTimeout.setDisable(false);
-            txtTimeout.setDisable(false);
+            inputTimeout.setDisable(false);
         }
     }
 
     public static void main(String[] args) {
         Application.launch(args);
+    }
+
+    private void clearAll() {
+        consoleQueues.clear();
+        consoleReceive.clear();
+        consoleSend.clear();
+        inputTimeout.clear();
+        inputQueue.clear();
+        inputReceiptHandle.clear();
+        inputDelay.setText("0");
+        inputBodyMessage.clear();
     }
 }
