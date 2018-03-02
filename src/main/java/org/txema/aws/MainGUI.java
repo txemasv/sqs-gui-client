@@ -75,7 +75,7 @@ public class MainGUI extends Application {
         textArea.setEditable(false);
         textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
 
-        Credentials credentials = ApplicationContext.getCredentials();
+        Credentials credentials = ApplicationContext.getInstance().getCredentials();
         CheckBox checkBox = new CheckBox("Show Credentials");
         vbox.getChildren().add(checkBox);
 
@@ -119,7 +119,7 @@ public class MainGUI extends Application {
                 String accessKey = accessTxt.getText();
                 String secretKey = secretTxt.getText();
                 if (sqsClient.testCredentials(accessKey, secretKey)) {
-                    sqsClient = ApplicationContext.getInstance().renewCredentials(new Credentials(accessKey, secretKey));
+                    sqsClient = ApplicationContext.getInstance().renewSqsClient(accessKey, secretKey);
                     tabQueues.setDisable(false);
                     tabPane.getSelectionModel().select(tabQueues);
                 }
@@ -283,11 +283,13 @@ public class MainGUI extends Application {
 
         Button buttonCreate = new Button("Get/Create");
         buttonCreate.setOnAction(e -> {
-            textArea.setText("Loading...");
             Runnable run = () -> {
+                textArea.setText("Loading...");
+                textArea.setText(Log.getInfo());
                 String url = sqsClient.createQueue(queuesTxt.getText());
                 setQueue(url);
-                txtTimeout.setText(sqsClient.getVisibilityTimeout(queueUrl));
+                String timeout = sqsClient.getVisibilityTimeout(queueUrl);
+                txtTimeout.setText(timeout);
                 textArea.setText(Log.getInfo());
             };
             Platform.runLater(run);
@@ -300,7 +302,7 @@ public class MainGUI extends Application {
                 sqsClient.listQueues();
                 textArea.setText(Log.getInfo());
             };
-            executorService.submit(run);
+            Platform.runLater(run);
         });
 
         GridPane gridTop = new GridPane();
@@ -320,7 +322,7 @@ public class MainGUI extends Application {
                 sqsClient.purgeQueue(queueUrl);
                 textArea.setText(Log.getInfo());
             };
-            executorService.submit(run);
+            Platform.runLater(run);
         });
 
         buttonDelete = new Button("Delete");
@@ -346,7 +348,7 @@ public class MainGUI extends Application {
 
             };
             if (!txtTimeout.getText().isEmpty() && txtTimeout.getText().matches("\\d*")) {
-                executorService.submit(run);
+                Platform.runLater(run);
             } else {
                 textArea.setText(Log.incorrect("VisibilityTimeout"));
             }

@@ -13,6 +13,7 @@ import java.util.Properties;
  */
 public class ApplicationContext {
 
+    private static Credentials credentials;
     private static SqsClient sqsClient;
     private static final ApplicationContext singleton = new ApplicationContext();
 
@@ -25,9 +26,8 @@ public class ApplicationContext {
     }
 
     private void instanceSqsClient() {
-        String accessKey = getProperties().getProperty("accessKey", "");
-        String secretKey = getProperties().getProperty("secretKey", "");
-        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+        credentials = getCredentialsFromFile();
+        AWSCredentials awsCredentials = new BasicAWSCredentials(credentials.getAccessKey(), credentials.getSecretKey());
         AmazonSQSClient client = new AmazonSQSClient(awsCredentials);
         sqsClient = new AwsClient(client);
     }
@@ -47,36 +47,26 @@ public class ApplicationContext {
         return prop;
     }
 
-    private static void setCredentials(String accessKey, String secretKey) {
-        Properties prop = new Properties();
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        File file = new File(loader.getResource("credentials.properties").getPath());
-        try (OutputStream output = new FileOutputStream(file)) {
-            // set the properties value
-            prop.setProperty("accessKey", accessKey);
-            prop.setProperty("secretKey", secretKey);
-
-            // save properties to project root folder
-            prop.store(output, null);
-
-        } catch (IOException io) {
-            io.printStackTrace();
-        }
+    private void setCredentials(String accessKey, String secretKey) {
+        credentials.setAccessKey(accessKey);
+        credentials.setSecretKey(secretKey);
     }
 
-    public static void setCredentials(Credentials credentials) {
-        setCredentials(credentials.getAccessKey(), credentials.getSecretKey());
+    public Credentials getCredentials() {
+        return credentials;
     }
 
-    public static Credentials getCredentials() {
-        return new Credentials(
-                getProperties().getProperty("accessKey"),
-                getProperties().getProperty("secretKey"));
+    private Credentials getCredentialsFromFile() {
+        String accessKey = getProperties().getProperty("accessKey", "");
+        String secretKey = getProperties().getProperty("secretKey", "");
+        return new Credentials(accessKey, secretKey);
     }
 
-    public SqsClient renewCredentials(Credentials credentials) {
-        setCredentials(credentials);
-        instanceSqsClient();
+    public SqsClient renewSqsClient(String accessKey, String secretKey) {
+        setCredentials(accessKey, secretKey);
+        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+        AmazonSQSClient client = new AmazonSQSClient(awsCredentials);
+        sqsClient = new AwsClient(client);
         return getSqsClient();
     }
 }

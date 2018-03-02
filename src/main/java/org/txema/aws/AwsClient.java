@@ -23,7 +23,7 @@ public class AwsClient implements SqsClient {
     @Override
     public void sendMessage(String queueUrl, Integer delaySeconds, String... messages) {
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             for (String message : messages) {
                 sqs.sendMessage(new SendMessageRequest(awsQueueUrl, message).withDelaySeconds(delaySeconds));
                 Log.sendMessage(awsQueueUrl, message);
@@ -37,7 +37,7 @@ public class AwsClient implements SqsClient {
     public List<MessageOutput> receiveMessage(String queueUrl) {
         List<MessageOutput> messagesOutput = new ArrayList<>();
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(awsQueueUrl);
             List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
             if (messages.isEmpty()) Log.empty();
@@ -54,7 +54,7 @@ public class AwsClient implements SqsClient {
     @Override
     public void deleteMessage(String queueUrl, String receiptHandle) {
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             sqs.deleteMessage(new DeleteMessageRequest(awsQueueUrl, receiptHandle));
             Log.deleteMessage(queueUrl, receiptHandle);
         } catch (AmazonServiceException ex) {
@@ -65,7 +65,7 @@ public class AwsClient implements SqsClient {
     @Override
     public void setVisibilityTimeout(String queueUrl, Integer timeSeconds) {
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             Map<String, String> attributes = new HashMap<>();
             attributes.put("VisibilityTimeout", timeSeconds.toString());
             sqs.setQueueAttributes(new SetQueueAttributesRequest(awsQueueUrl, attributes));
@@ -79,7 +79,7 @@ public class AwsClient implements SqsClient {
     public String getVisibilityTimeout(String queueUrl) {
         String timeout = null;
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             List<String> attributeNames = new ArrayList<>();
             attributeNames.add("VisibilityTimeout");
             GetQueueAttributesResult result = sqs.getQueueAttributes(new GetQueueAttributesRequest(awsQueueUrl, attributeNames));
@@ -105,10 +105,22 @@ public class AwsClient implements SqsClient {
         return awsQueueUrl;
     }
 
+    private String getQueue(String queueName) {
+        String awsQueueUrl = null;
+        try {
+            CreateQueueRequest createQueueRequest = new CreateQueueRequest(fromUrl(queueName));
+            CreateQueueResult response = sqs.createQueue(createQueueRequest);
+            awsQueueUrl = response.getQueueUrl();
+        } catch (AmazonServiceException ex) {
+            System.out.println(ex.getErrorMessage());
+        }
+        return awsQueueUrl;
+    }
+
     @Override
     public void purgeQueue(String queueUrl) {
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             sqs.purgeQueue(new PurgeQueueRequest(awsQueueUrl));
             Log.purgeQueue(fromUrl(queueUrl));
         } catch (AmazonServiceException ex) {
@@ -119,7 +131,7 @@ public class AwsClient implements SqsClient {
     @Override
     public void deleteQueue(String queueUrl) {
         try {
-            String awsQueueUrl = createQueue(fromUrl(queueUrl));
+            String awsQueueUrl = getQueue(fromUrl(queueUrl));
             sqs.deleteQueue(new DeleteQueueRequest(awsQueueUrl));
             Log.deleteQueue(fromUrl(queueUrl));
         } catch (AmazonServiceException ex) {
