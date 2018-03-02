@@ -1,5 +1,6 @@
 package org.txema.aws;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSClient;
@@ -60,6 +61,20 @@ public class ApplicationContext {
         String accessKey = getProperties().getProperty("accessKey", "");
         String secretKey = getProperties().getProperty("secretKey", "");
         return new Credentials(accessKey, secretKey);
+    }
+
+    public boolean testCredentials(String accessKey, String secretKey) {
+        try {
+            AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+            AmazonSQSClient client = new AmazonSQSClient(awsCredentials);
+            client.listQueues();
+            return true;
+        } catch (AmazonServiceException ex) {
+            Log.exception(ex.getErrorMessage());
+        } catch (Exception ex) {
+            Log.exception(ex.getMessage());
+        }
+        return false;
     }
 
     public SqsClient renewSqsClient(String accessKey, String secretKey) {

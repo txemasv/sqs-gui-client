@@ -1,8 +1,6 @@
 package org.txema.aws;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.*;
@@ -26,7 +24,7 @@ public class AwsClient implements SqsClient {
             String awsQueueUrl = getQueue(fromUrl(queueUrl));
             for (String message : messages) {
                 sqs.sendMessage(new SendMessageRequest(awsQueueUrl, message).withDelaySeconds(delaySeconds));
-                Log.sendMessage(awsQueueUrl, message);
+                Log.sendMessage(awsQueueUrl, message, delaySeconds);
             }
         } catch (AmazonServiceException ex) {
             Log.exception(ex.getErrorMessage());
@@ -150,21 +148,6 @@ public class AwsClient implements SqsClient {
         } catch (AmazonServiceException ex) {
             Log.exception(ex.getErrorMessage());
         }
-    }
-
-    @Override
-    public boolean testCredentials(String accessKey, String secretKey) {
-        try {
-            AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
-            AmazonSQSClient client = new AmazonSQSClient(awsCredentials);
-            client.listQueues();
-            return true;
-        } catch (AmazonServiceException ex) {
-            Log.exception(ex.getErrorMessage() + "\nCredentials will not be saved.");
-        } catch (Exception ex) {
-            Log.exception(ex.getMessage());
-        }
-        return false;
     }
 
     private String fromUrl(String queueUrl) {

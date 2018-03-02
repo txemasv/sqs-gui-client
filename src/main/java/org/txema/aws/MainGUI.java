@@ -2,6 +2,8 @@ package org.txema.aws;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -17,7 +19,7 @@ import java.util.concurrent.Executors;
 
 public class MainGUI extends Application {
 
-    private SqsClient sqsClient = ApplicationContext.getInstance().getSqsClient();
+    private SqsClient sqsClient;
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private TabPane tabPane;
     private Tab tabSend;
@@ -88,8 +90,6 @@ public class MainGUI extends Application {
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
         textArea.prefWidthProperty().bind(vbox.prefWidthProperty());
-        final ProgressIndicator pi = new ProgressIndicator();
-        pi.setVisible(false);
 
         Credentials credentials = ApplicationContext.getInstance().getCredentials();
         CheckBox checkBox = new CheckBox("Show Credentials");
@@ -128,24 +128,19 @@ public class MainGUI extends Application {
         grid.setHgap(10);
         grid.setVgap(10);
 
-        Button buttonSave = new Button("Connect");
-        buttonSave.setOnAction(e -> {
+        Button buttonConnect = new Button("Connect");
+        buttonConnect.setOnAction(event -> {
             textArea.setText("\nVerifying Credentials...");
-            pi.setVisible(true);
-            Runnable run = () -> {
-                String accessKey = accessTxt.getText();
-                String secretKey = secretTxt.getText();
-                if (sqsClient.testCredentials(accessKey, secretKey)) {
-                    sqsClient = ApplicationContext.getInstance().renewSqsClient(accessKey, secretKey);
-                    tabQueues.setDisable(false);
-                    tabPane.getSelectionModel().select(tabQueues);
-                    clearAll();
-                    setQueue(null);
-                }
-                textArea.setText(Log.getInfo());
-                pi.setVisible(false);
-            };
-            Platform.runLater(run);
+            String accessKey = accessTxt.getText();
+            String secretKey = secretTxt.getText();
+            if (ApplicationContext.getInstance().testCredentials(accessKey, secretKey)) {
+                sqsClient = ApplicationContext.getInstance().renewSqsClient(accessKey, secretKey);
+                tabQueues.setDisable(false);
+                tabPane.getSelectionModel().select(tabQueues);
+                clearAll();
+                setQueue(null);
+            }
+            textArea.setText(Log.getInfo());
         });
 
         int row = 0;
@@ -155,9 +150,8 @@ public class MainGUI extends Application {
         grid.add(secretLbl, 0, ++row);
         grid.add(secretTxt, 0, ++row);
         grid.add(secretTxtPsw, 0, row);
-        grid.add(buttonSave, 0, ++row);
+        grid.add(buttonConnect, 0, ++row);
         grid.add(textArea, 0, ++row);
-        grid.add(pi, 0, ++row);
         vbox.getChildren().add(grid);
         vbox.setAlignment(Pos.CENTER);
         tabCredentials.setContent(vbox);

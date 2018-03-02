@@ -8,8 +8,9 @@ public class Log {
 
     private static String info = "";
 
-    public static void sendMessage(String queue, String body) {
+    public static void sendMessage(String queue, String body, Integer delay) {
         info = info + "\n" + "<-- Sent at " + dateFormatter.format(new Date()) +
+                ((delay > 0) ? " (delay " + delay + "s)" : "") +
                 "\n" + "to: " + queue +
                 "\n" + "body: " + body + "\n";
         print(info);
@@ -24,14 +25,14 @@ public class Log {
     }
 
     public static void deleteMessage(String queue, String receiptHandle) {
-        info = info +  "\n" + "(x) Deleted at " + dateFormatter.format(new Date()) +
+        info = info + "\n" + "(x) Deleted at " + dateFormatter.format(new Date()) +
                 "\n" + "from: " + queue +
                 "\n" + "receiptHandle: " + receiptHandle + "\n";
         print(info);
     }
 
     public static void getQueue(String name) {
-        info = info +  "\nGet queue '" + name + "'." + "\n";
+        info = info + "\nGet queue '" + name + "'." + "\n";
         print(info);
     }
 
@@ -51,7 +52,7 @@ public class Log {
     }
 
     public static void purgeQueue(String name) {
-        info = info +  "\nQueue '" + name + "' purged" + "\n";
+        info = info + "\nQueue '" + name + "' purged" + "\n";
         print(info);
     }
 
