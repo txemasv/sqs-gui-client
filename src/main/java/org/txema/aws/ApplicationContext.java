@@ -38,32 +38,20 @@ public class ApplicationContext {
 
     private static Properties getProperties() {
         Properties prop = new Properties();
-        InputStream input = null;
-        try {
-            input = new FileInputStream("src/main/resources/credentials.properties");
-            // load a properties file
-            prop.load(input);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        try(InputStream resourceStream = loader.getResourceAsStream("credentials.properties")) {
+            prop.load(resourceStream);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return prop;
     }
 
     private static void setCredentials(String accessKey, String secretKey) {
         Properties prop = new Properties();
-        OutputStream output = null;
-
-        try {
-            output = new FileOutputStream("src/main/resources/credentials.properties");
-
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        File file = new File(loader.getResource("credentials.properties").getPath());
+        try (OutputStream output = new FileOutputStream(file)) {
             // set the properties value
             prop.setProperty("accessKey", accessKey);
             prop.setProperty("secretKey", secretKey);
@@ -73,15 +61,6 @@ public class ApplicationContext {
 
         } catch (IOException io) {
             io.printStackTrace();
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
         }
     }
 
