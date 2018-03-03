@@ -1,5 +1,5 @@
 # sqs-gui-client
-GUI Application that allow you test and do basic operations in your AWS/SQS queues easily.
+Desktop Application to test and execute basic operations in your AWS/SQS queues easily.
 
 ## Features
 - Java8
